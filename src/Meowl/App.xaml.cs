@@ -42,7 +42,7 @@ public partial class App : Application
 
         _settings = PetSettings.Load();
         _pet = new PetWindow(_settings);
-        var agent = new PetAgent(new PetToolbox(_pet));
+        var agent = new AgentRouter(new PetToolbox(_pet));
         _chat = new ChatWindow(_pet, agent, _settings);
 
         _pet.ChatRequested += (_, _) => _chat.Toggle();

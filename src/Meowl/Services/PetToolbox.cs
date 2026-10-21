@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Windows.Threading;
 using Anthropic.Models.Beta.Messages;
 
@@ -41,34 +42,49 @@ public sealed class PetToolbox(IPetHost host)
 
     readonly List<DispatcherTimer> _reminders = [];
 
+    /// <summary>Beschreibung eines Werkzeugs, unabhängig vom KI-Anbieter.</summary>
+    sealed record ToolSpec(string Name, string Description, Dictionary<string, object>? Properties = null, string[]? Required = null)
+    {
+        public Dictionary<string, JsonElement> SchemaProperties =>
+            (Properties ?? []).ToDictionary(kv => kv.Key, kv => JsonSerializer.SerializeToElement(kv.Value));
+    }
+
+    static readonly ToolSpec[] Specs =
+    [
+        new("get_datetime", "Returns the user's current local date, time and time zone. Use it whenever the answer depends on today's date or the current time."),
+        new("open_url", "Opens a web page in the user's default browser. Only http and https URLs are allowed.",
+            new() { ["url"] = new { type = "string", description = "Full URL starting with http:// or https://" } },
+            ["url"]),
+        new("open_program", "Starts one of a few safe Windows programs for the user.",
+            new() { ["program"] = new { type = "string", @enum = Programs.Keys.ToArray(), description = "Which program to open" } },
+            ["program"]),
+        new("set_reminder", "Sets a reminder. When it is due, the pet wakes up, plays a sound and shows the text in a speech bubble. Reminders only work while the pet app is running.",
+            new()
+            {
+                ["minutes"] = new { type = "number", description = "Minutes from now, between 0.5 and 1440" },
+                ["text"] = new { type = "string", description = "What to remind the user of, written in the user's language" },
+            },
+            ["minutes", "text"]),
+        new("save_note", "Saves a short note for the user to their notes file (notizen.md). Use it when the user asks you to remember or note something.",
+            new() { ["text"] = new { type = "string", description = "The note text" } },
+            ["text"]),
+        new("read_notes", "Reads the user's saved notes."),
+        new("read_clipboard", "Reads the text currently on the user's clipboard, e.g. when they say 'translate what I copied'."),
+        new("get_system_info", "Returns information about the user's PC: Windows version, uptime, battery, memory and free disk space."),
+        new("pet_action", "Makes the desktop pet (you) do an animation. Use it playfully, e.g. dance when the user is happy or asks you to dance.",
+            new() { ["action"] = new { type = "string", @enum = new[] { "happy", "dance", "fly", "sleep" } } },
+            ["action"]),
+    ];
+
+    /// <summary>Werkzeuge im Format der Claude-API (plus Claudes eingebaute Websuche).</summary>
     public List<BetaToolUnion> Definitions(PetSettings settings)
     {
-        List<BetaToolUnion> tools =
-        [
-            Tool("get_datetime", "Returns the user's current local date, time and time zone. Use it whenever the answer depends on today's date or the current time."),
-            Tool("open_url", "Opens a web page in the user's default browser. Only http and https URLs are allowed.",
-                new() { ["url"] = new { type = "string", description = "Full URL starting with http:// or https://" } },
-                ["url"]),
-            Tool("open_program", "Starts one of a few safe Windows programs for the user.",
-                new() { ["program"] = new { type = "string", @enum = Programs.Keys.ToArray(), description = "Which program to open" } },
-                ["program"]),
-            Tool("set_reminder", "Sets a reminder. When it is due, the pet wakes up, plays a sound and shows the text in a speech bubble. Reminders only work while the pet app is running.",
-                new()
-                {
-                    ["minutes"] = new { type = "number", description = "Minutes from now, between 0.5 and 1440" },
-                    ["text"] = new { type = "string", description = "What to remind the user of, written in the user's language" },
-                },
-                ["minutes", "text"]),
-            Tool("save_note", "Saves a short note for the user to their notes file (notizen.md). Use it when the user asks you to remember or note something.",
-                new() { ["text"] = new { type = "string", description = "The note text" } },
-                ["text"]),
-            Tool("read_notes", "Reads the user's saved notes."),
-            Tool("read_clipboard", "Reads the text currently on the user's clipboard, e.g. when they say 'translate what I copied'."),
-            Tool("get_system_info", "Returns information about the user's PC: Windows version, uptime, battery, memory and free disk space."),
-            Tool("pet_action", "Makes the desktop pet (you) do an animation. Use it playfully, e.g. dance when the user is happy or asks you to dance.",
-                new() { ["action"] = new { type = "string", @enum = new[] { "happy", "dance", "fly", "sleep" } } },
-                ["action"]),
-        ];
+        List<BetaToolUnion> tools = [.. Specs.Select(spec => (BetaToolUnion)new BetaTool
+        {
+            Name = spec.Name,
+            Description = spec.Description,
+            InputSchema = new() { Properties = spec.SchemaProperties, Required = spec.Required ?? [] },
+        })];
 
         if (settings.WebSearch)
         {
@@ -80,19 +96,32 @@ public sealed class PetToolbox(IPetHost host)
         return tools;
     }
 
-    static BetaToolUnion Tool(string name, string description,
-        Dictionary<string, object>? properties = null, string[]? required = null)
+    /// <summary>Werkzeuge im OpenAI-kompatiblen Format (Gemini, Groq, Ollama, ...).</summary>
+    public static JsonArray OpenAiDefinitions()
     {
-        return new BetaTool
+        var tools = new JsonArray();
+        foreach (var spec in Specs)
         {
-            Name = name,
-            Description = description,
-            InputSchema = new()
+            var properties = new JsonObject();
+            foreach (var (key, value) in spec.SchemaProperties)
+                properties[key] = JsonNode.Parse(value.GetRawText());
+            tools.Add(new JsonObject
             {
-                Properties = (properties ?? []).ToDictionary(kv => kv.Key, kv => JsonSerializer.SerializeToElement(kv.Value)),
-                Required = required ?? [],
-            },
-        };
+                ["type"] = "function",
+                ["function"] = new JsonObject
+                {
+                    ["name"] = spec.Name,
+                    ["description"] = spec.Description,
+                    ["parameters"] = new JsonObject
+                    {
+                        ["type"] = "object",
+                        ["properties"] = properties,
+                        ["required"] = new JsonArray([.. (spec.Required ?? []).Select(r => JsonValue.Create(r))]),
+                    },
+                },
+            });
+        }
+        return tools;
     }
 
     public ToolOutcome Execute(string name, IReadOnlyDictionary<string, JsonElement> input)

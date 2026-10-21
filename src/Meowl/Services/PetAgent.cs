@@ -12,7 +12,7 @@ public sealed class MissingApiKeyException() : Exception("Kein API-Schlüssel hi
 /// Das "Gehirn" des Haustiers: schickt den Chat an Claude und führt die
 /// Werkzeuge aus, die Claude aufruft, bis eine fertige Antwort da ist.
 /// </summary>
-public sealed class PetAgent(PetToolbox toolbox)
+public sealed class PetAgent(PetToolbox toolbox) : IPetAgent
 {
     const int MaxSteps = 12;
 
@@ -130,7 +130,7 @@ public sealed class PetAgent(PetToolbox toolbox)
         {
             Model = settings.Model,
             MaxTokens = 16000,
-            System = SystemPrompt(settings),
+            System = SystemPrompt(settings, webSearch: settings.WebSearch),
             Messages = [.. _history],
             Tools = toolbox.Definitions(settings),
             // Für Plaudereien reicht wenig Denkaufwand: schneller und günstiger
@@ -144,9 +144,13 @@ public sealed class PetAgent(PetToolbox toolbox)
             : parameters;
     }
 
-    static string SystemPrompt(PetSettings s)
+    /// <summary>Persönlichkeit und Regeln, gilt für alle Anbieter.</summary>
+    internal static string SystemPrompt(PetSettings s, bool webSearch)
     {
         var user = string.IsNullOrWhiteSpace(s.UserName) ? "deinem Menschen" : s.UserName.Trim();
+        var search = webSearch
+            ? "Für aktuelle Ereignisse, Preise oder Fakten, bei denen du unsicher bist, suche im Web statt zu raten, und nenne kurz die Quelle."
+            : "Du kannst nicht im Web suchen. Bei aktuellen Ereignissen oder Preisen sag ehrlich, dass dein Wissen veraltet sein kann.";
         return $"""
             Du bist {s.PetName}, eine kleine Katzeneule ("Meow" + "Owl"): Kopf einer Katze mit Knickohren und großen dunklen Kulleraugen,
             Körper einer Eule mit weißem Bauch, braunen Flügeln und langem Schwanz. Du lebst als Desktop-Haustier unten
@@ -159,10 +163,9 @@ public sealed class PetAgent(PetToolbox toolbox)
               **Fett** und einfache Aufzählungen mit "- " sind in Ordnung.
             - Ein bisschen verspielt (ab und zu ein "miau" oder "huhu"), aber bei ernsten Fragen sachlich und genau.
 
-            Du hast Werkzeuge: Uhrzeit, Websuche (falls aktiviert), Links und ein paar Programme öffnen, Erinnerungen,
+            Du hast Werkzeuge: Uhrzeit, {(webSearch ? "Websuche, " : "")}Links und ein paar Programme öffnen, Erinnerungen,
             Notizen, Zwischenablage lesen, PC-Infos und eigene Animationen (pet_action). Nutze sie, wenn sie helfen,
-            ohne vorher um Erlaubnis zu fragen, solange klar ist, was gewünscht ist. Für aktuelle Ereignisse, Preise oder
-            Fakten, bei denen du unsicher bist, suche im Web statt zu raten, und nenne kurz die Quelle.
+            ohne vorher um Erlaubnis zu fragen, solange klar ist, was gewünscht ist. {search}
             Erfinde keine Ergebnisse von Werkzeugen. Wenn etwas nicht geht, sag es ehrlich.
             """;
     }

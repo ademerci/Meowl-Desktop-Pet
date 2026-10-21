@@ -31,22 +31,51 @@
     </Window.Resources>
 
     <StackPanel Margin="22,8,22,20">
-        <TextBlock Style="{StaticResource Label}" Text="Claude API-Schlüssel" />
-        <PasswordBox x:Name="ApiKeyBox" />
-        <TextBlock Style="{StaticResource Hint}">
-            Bekommst du unter
-            <Hyperlink NavigateUri="https://console.anthropic.com/settings/keys" RequestNavigate="Link_RequestNavigate">console.anthropic.com</Hyperlink>.
-            Wird verschlüsselt nur für deinen Windows-Benutzer gespeichert. Leer lassen, um den bisherigen Schlüssel zu behalten.
-        </TextBlock>
-        <TextBlock x:Name="KeyStatus" Style="{StaticResource Hint}" Foreground="#5E8A4A" />
-
-        <TextBlock Style="{StaticResource Label}" Text="Modell" />
-        <ComboBox x:Name="ModelBox" Padding="6,5" SelectedValuePath="Tag">
-            <ComboBoxItem Tag="claude-opus-5-5" Content="Claude Opus 5.5 – am klügsten (Standard)" />
-            <ComboBoxItem Tag="claude-sonnet-5-5" Content="Claude Sonnet 5.5 – schnell und günstiger" />
-            <ComboBoxItem Tag="claude-haiku-5-5" Content="Claude Haiku 5.5 – am schnellsten und günstigsten" />
+        <TextBlock Style="{StaticResource Label}" Text="KI-Anbieter" />
+        <ComboBox x:Name="ProviderBox" Padding="6,5" SelectedValuePath="Tag" SelectionChanged="ProviderBox_SelectionChanged">
+            <ComboBoxItem Tag="claude" Content="Claude (Anthropic) – am klügsten, kostenpflichtig" />
+            <ComboBoxItem Tag="gemini" Content="Google Gemini – kostenlos mit Limits" />
         </ComboBox>
-        <TextBlock Style="{StaticResource Hint}" Text="Grob pro Nachricht: Opus 1–2 Cent, Sonnet etwa die Hälfte, Haiku unter 0,1 Cent. Websuchen kosten extra." />
+
+        <!-- Claude -->
+        <StackPanel x:Name="ClaudePanel">
+            <TextBlock Style="{StaticResource Label}" Text="Claude API-Schlüssel" />
+            <PasswordBox x:Name="ApiKeyBox" />
+            <TextBlock Style="{StaticResource Hint}">
+                Bekommst du unter
+                <Hyperlink NavigateUri="https://console.anthropic.com/settings/keys" RequestNavigate="Link_RequestNavigate">console.anthropic.com</Hyperlink>.
+                Wird verschlüsselt nur für deinen Windows-Benutzer gespeichert. Leer lassen, um den bisherigen Schlüssel zu behalten.
+            </TextBlock>
+            <TextBlock x:Name="KeyStatus" Style="{StaticResource Hint}" Foreground="#5E8A4A" />
+
+            <TextBlock Style="{StaticResource Label}" Text="Modell" />
+            <ComboBox x:Name="ModelBox" Padding="6,5" SelectedValuePath="Tag">
+                <ComboBoxItem Tag="claude-opus-5-5" Content="Claude Opus 5.5 – am klügsten (Standard)" />
+                <ComboBoxItem Tag="claude-sonnet-5-5" Content="Claude Sonnet 5.5 – schnell und günstiger" />
+                <ComboBoxItem Tag="claude-haiku-5-5" Content="Claude Haiku 5.5 – am schnellsten und günstigsten" />
+            </ComboBox>
+            <TextBlock Style="{StaticResource Hint}" Text="Grob pro Nachricht: Opus 1–2 Cent, Sonnet etwa die Hälfte, Haiku unter 0,1 Cent. Websuchen kosten extra." />
+        </StackPanel>
+
+        <!-- Google Gemini -->
+        <StackPanel x:Name="GeminiPanel" Visibility="Collapsed">
+            <TextBlock Style="{StaticResource Label}" Text="Gemini API-Schlüssel" />
+            <PasswordBox x:Name="GeminiKeyBox" />
+            <TextBlock Style="{StaticResource Hint}">
+                Kostenlos unter
+                <Hyperlink NavigateUri="https://aistudio.google.com/app/apikey" RequestNavigate="Link_RequestNavigate">aistudio.google.com</Hyperlink>
+                (Google-Konto, keine Kreditkarte). Wird verschlüsselt gespeichert. Leer lassen, um den bisherigen Schlüssel zu behalten.
+            </TextBlock>
+            <TextBlock x:Name="GeminiKeyStatus" Style="{StaticResource Hint}" Foreground="#5E8A4A" />
+
+            <TextBlock Style="{StaticResource Label}" Text="Modell" />
+            <ComboBox x:Name="GeminiModelBox" Padding="6,5" SelectedValuePath="Tag">
+                <ComboBoxItem Tag="gemini-3.6-flash" Content="Gemini 3.6 Flash (Standard)" />
+                <ComboBoxItem Tag="gemini-3.8-flash" Content="Gemini 3.8 Flash – das neueste" />
+                <ComboBoxItem Tag="gemini-3.5-flash-lite" Content="Gemini 3.5 Flash-Lite – am schnellsten" />
+            </ComboBox>
+            <TextBlock Style="{StaticResource Hint}" Text="Gratis mit Limits pro Minute und Tag. Mit Gemini gibt es keine Websuche." />
+        </StackPanel>
 
         <Grid Margin="0,4,0,0">
             <Grid.ColumnDefinitions>
@@ -69,7 +98,7 @@
 
         <TextBlock Style="{StaticResource Label}" Text="Verhalten" />
         <CheckBox x:Name="WanderBox" Content="Herumhüpfen und fliegen" />
-        <CheckBox x:Name="WebSearchBox" Content="Websuche erlauben (kostet etwas mehr)" />
+        <CheckBox x:Name="WebSearchBox" Content="Websuche erlauben (nur mit Claude, kostet etwas mehr)" />
         <CheckBox x:Name="AutostartBox" Content="Mit Windows starten" />
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">

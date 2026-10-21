@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,7 +28,7 @@ public partial class ChatWindow : Window
         RegexOptions.Compiled);
 
     readonly PetWindow _pet;
-    readonly PetAgent _agent;
+    readonly IPetAgent _agent;
     readonly PetSettings _settings;
     readonly Storyboard _typingAnimation;
     CancellationTokenSource? _cts;
@@ -35,7 +36,7 @@ public partial class ChatWindow : Window
     public bool AllowClose { get; set; }
     public event EventHandler? SettingsRequested;
 
-    public ChatWindow(PetWindow pet, PetAgent agent, PetSettings settings)
+    public ChatWindow(PetWindow pet, IPetAgent agent, PetSettings settings)
     {
         _pet = pet;
         _agent = agent;
@@ -61,9 +62,10 @@ public partial class ChatWindow : Window
         if (Messages.Children.Count == 0)
         {
             var name = string.IsNullOrWhiteSpace(_settings.UserName) ? "" : $" {_settings.UserName.Trim()}";
+            var canSearch = !_settings.UsesGemini && _settings.WebSearch;
             AddMessage(false, _settings.HasApiKey
-                ? $"Miau-huu, hallo{name}! 🦉 Ich bin {_settings.PetName}. Frag mich was, lass mich etwas im Web suchen oder sag mir, woran ich dich erinnern soll."
-                : $"Miau-huu, hallo{name}! Ich bin {_settings.PetName}. Damit ich antworten kann, brauche ich einen **Claude API-Schlüssel**. Klick oben auf das Zahnrad ⚙.");
+                ? $"Miau-huu, hallo{name}! 🦉 Ich bin {_settings.PetName}. Frag mich was, {(canSearch ? "lass mich etwas im Web suchen " : "")}oder sag mir, woran ich dich erinnern soll."
+                : $"Miau-huu, hallo{name}! Ich bin {_settings.PetName}. Damit ich antworten kann, brauche ich einen {KeyName}. Klick oben auf das Zahnrad ⚙.");
         }
     }
 
@@ -111,6 +113,8 @@ public partial class ChatWindow : Window
     //  Senden
     // ------------------------------------------------------------------
 
+    string KeyName => _settings.UsesGemini ? "**Gemini API-Schlüssel**" : "**Claude API-Schlüssel**";
+
     async void Send()
     {
         if (_cts is not null)
@@ -126,7 +130,7 @@ public partial class ChatWindow : Window
 
         if (!_settings.HasApiKey)
         {
-            AddMessage(false, "Ich brauche zuerst einen **Claude API-Schlüssel**, sonst kann ich nicht denken. 🙈 Klick oben auf das Zahnrad ⚙.");
+            AddMessage(false, $"Ich brauche zuerst einen {KeyName}, sonst kann ich nicht denken. 🙈 Klick oben auf das Zahnrad ⚙.");
             return;
         }
 
@@ -165,6 +169,14 @@ public partial class ChatWindow : Window
                 : $"Fehler von der API: {ex.Message}");
         }
         catch (AnthropicIOException)
+        {
+            AddError("Keine Verbindung zum Internet oder zur API.");
+        }
+        catch (PetApiException ex)
+        {
+            AddError(ex.Message);
+        }
+        catch (HttpRequestException)
         {
             AddError("Keine Verbindung zum Internet oder zur API.");
         }

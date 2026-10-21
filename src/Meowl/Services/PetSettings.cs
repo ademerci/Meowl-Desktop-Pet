@@ -23,44 +23,67 @@ public sealed class PetSettings
     const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
     const string RunValue = "Meowl";
 
+    public const string ProviderClaude = "claude";
+    public const string ProviderGemini = "gemini";
+
     public string PetName { get; set; } = "Meowl";
     public string UserName { get; set; } = "";
+    /// <summary>Welche KI antwortet: "claude" oder "gemini".</summary>
+    public string Provider { get; set; } = ProviderClaude;
     public string Model { get; set; } = "claude-opus-5-5";
+    public string GeminiModel { get; set; } = "gemini-3.6-flash";
     public bool WebSearch { get; set; } = true;
     public bool Wander { get; set; } = true;
     public double Scale { get; set; } = 0.8;
     public double? LastX { get; set; }
     public string? ApiKeyProtected { get; set; }
+    public string? GeminiKeyProtected { get; set; }
 
-    /// <summary>Gespeicherter Schlüssel, sonst die Umgebungsvariable ANTHROPIC_API_KEY.</summary>
+    /// <summary>Gespeicherter Claude-Schlüssel, sonst die Umgebungsvariable ANTHROPIC_API_KEY.</summary>
     [JsonIgnore]
     public string? ApiKey
     {
-        get
-        {
-            if (!string.IsNullOrEmpty(ApiKeyProtected))
-            {
-                try
-                {
-                    var bytes = ProtectedData.Unprotect(Convert.FromBase64String(ApiKeyProtected), null, DataProtectionScope.CurrentUser);
-                    return Encoding.UTF8.GetString(bytes);
-                }
-                catch (CryptographicException) { }
-                catch (FormatException) { }
-            }
-            var env = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
-            return string.IsNullOrWhiteSpace(env) ? null : env;
-        }
-        set
-        {
-            ApiKeyProtected = string.IsNullOrWhiteSpace(value)
-                ? null
-                : Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(value.Trim()), null, DataProtectionScope.CurrentUser));
-        }
+        get => Unprotect(ApiKeyProtected) ?? FromEnvironment("ANTHROPIC_API_KEY");
+        set => ApiKeyProtected = Protect(value);
+    }
+
+    /// <summary>Gespeicherter Gemini-Schlüssel, sonst GOOGLE_API_KEY oder GEMINI_API_KEY.</summary>
+    [JsonIgnore]
+    public string? GeminiApiKey
+    {
+        get => Unprotect(GeminiKeyProtected) ?? FromEnvironment("GOOGLE_API_KEY") ?? FromEnvironment("GEMINI_API_KEY");
+        set => GeminiKeyProtected = Protect(value);
     }
 
     [JsonIgnore]
-    public bool HasApiKey => !string.IsNullOrEmpty(ApiKey);
+    public bool UsesGemini => Provider == ProviderGemini;
+
+    /// <summary>Ist für den gewählten Anbieter ein Schlüssel vorhanden?</summary>
+    [JsonIgnore]
+    public bool HasApiKey => !string.IsNullOrEmpty(UsesGemini ? GeminiApiKey : ApiKey);
+
+    static string? Protect(string? value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? null
+            : Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(value.Trim()), null, DataProtectionScope.CurrentUser));
+
+    static string? Unprotect(string? protectedValue)
+    {
+        if (string.IsNullOrEmpty(protectedValue)) return null;
+        try
+        {
+            var bytes = ProtectedData.Unprotect(Convert.FromBase64String(protectedValue), null, DataProtectionScope.CurrentUser);
+            return Encoding.UTF8.GetString(bytes);
+        }
+        catch (CryptographicException) { return null; }
+        catch (FormatException) { return null; }
+    }
+
+    static string? FromEnvironment(string name)
+    {
+        var value = Environment.GetEnvironmentVariable(name);
+        return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
 
     public static PetSettings Load()
     {

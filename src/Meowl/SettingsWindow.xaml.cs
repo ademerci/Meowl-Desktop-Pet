@@ -16,19 +16,37 @@ public partial class SettingsWindow : Window
 
         PetNameBox.Text = settings.PetName;
         UserNameBox.Text = settings.UserName;
+        ProviderBox.SelectedValue = settings.Provider;
+        if (ProviderBox.SelectedIndex < 0) ProviderBox.SelectedIndex = 0;
         ModelBox.SelectedValue = settings.Model;
         if (ModelBox.SelectedIndex < 0) ModelBox.SelectedIndex = 0;
+        GeminiModelBox.SelectedValue = settings.GeminiModel;
+        if (GeminiModelBox.SelectedIndex < 0) GeminiModelBox.SelectedIndex = 0;
         ScaleSlider.Value = settings.Scale;
         WanderBox.IsChecked = settings.Wander;
         WebSearchBox.IsChecked = settings.WebSearch;
         AutostartBox.IsChecked = PetSettings.StartWithWindows;
 
-        KeyStatus.Text = settings.ApiKeyProtected is not null
-            ? "✓ Ein Schlüssel ist gespeichert."
-            : settings.HasApiKey ? "✓ Schlüssel aus der Umgebungsvariable ANTHROPIC_API_KEY wird benutzt." : "";
-        if (KeyStatus.Text.Length == 0) KeyStatus.Visibility = Visibility.Collapsed;
+        ShowKeyStatus(KeyStatus, settings.ApiKeyProtected is not null, settings.ApiKey is not null, "ANTHROPIC_API_KEY");
+        ShowKeyStatus(GeminiKeyStatus, settings.GeminiKeyProtected is not null, settings.GeminiApiKey is not null, "GOOGLE_API_KEY / GEMINI_API_KEY");
 
-        Loaded += (_, _) => ApiKeyBox.Focus();
+        Loaded += (_, _) => (settings.UsesGemini ? GeminiKeyBox : ApiKeyBox).Focus();
+    }
+
+    static void ShowKeyStatus(System.Windows.Controls.TextBlock status, bool saved, bool available, string envName)
+    {
+        status.Text = saved
+            ? "✓ Ein Schlüssel ist gespeichert."
+            : available ? $"✓ Schlüssel aus der Umgebungsvariable {envName} wird benutzt." : "";
+        status.Visibility = status.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    void ProviderBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (ClaudePanel is null || GeminiPanel is null) return;
+        var gemini = ProviderBox.SelectedValue as string == PetSettings.ProviderGemini;
+        ClaudePanel.Visibility = gemini ? Visibility.Collapsed : Visibility.Visible;
+        GeminiPanel.Visibility = gemini ? Visibility.Visible : Visibility.Collapsed;
     }
 
     void Save_Click(object sender, RoutedEventArgs e)
@@ -45,9 +63,23 @@ public partial class SettingsWindow : Window
             _settings.ApiKey = key;
         }
 
+        var geminiKey = GeminiKeyBox.Password.Trim();
+        if (geminiKey.Length > 0)
+        {
+            if (geminiKey.StartsWith("sk-", StringComparison.Ordinal) || geminiKey.Contains(' '))
+            {
+                MessageBox.Show(this, "Das sieht nicht wie ein Gemini API-Schlüssel aus. Kopiere ihn unter aistudio.google.com → \"Get API key\".",
+                    "Meowl", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            _settings.GeminiApiKey = geminiKey;
+        }
+
         _settings.PetName = string.IsNullOrWhiteSpace(PetNameBox.Text) ? "Meowl" : PetNameBox.Text.Trim();
         _settings.UserName = UserNameBox.Text.Trim();
+        _settings.Provider = ProviderBox.SelectedValue as string ?? PetSettings.ProviderClaude;
         _settings.Model = ModelBox.SelectedValue as string ?? "claude-opus-5-5";
+        _settings.GeminiModel = GeminiModelBox.SelectedValue as string ?? "gemini-3.6-flash";
         _settings.Scale = Math.Round(ScaleSlider.Value, 2);
         _settings.Wander = WanderBox.IsChecked == true;
         _settings.WebSearch = WebSearchBox.IsChecked == true;

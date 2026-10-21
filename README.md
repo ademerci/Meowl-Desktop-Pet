@@ -18,7 +18,7 @@ set reminders, take notes and more.
 - **Pixel-art pet** – 32×36 hand-made sprite, crisp at every size, eyes follow your mouse
 - **Alive** – hops, flies across the screen, flaps its wings, wags its tail, blinks, falls asleep after a while
 - **Interactive** – drag it around (it flutters back down), pet it by moving the mouse over it, right-click for a menu
-- **AI chat** – click it and talk to Claude in a speech bubble
+- **AI chat** – click it and talk to Claude or, for free, Google Gemini in a speech bubble
 - **Agent tools** – web search, reminders, notes, clipboard, opening links and a few safe programs, PC info, and it can trigger its own animations ("dance for me!")
 - **Private and safe** – API key encrypted with Windows DPAPI, no telemetry, tools can't delete anything or run arbitrary commands
 
@@ -28,7 +28,7 @@ set reminders, take notes and more.
    It's a single file, no installation and no .NET needed.
 2. **Run it.** Windows SmartScreen may warn you because the exe isn't code-signed:
    click *More info* → *Run anyway*.
-3. **Add your Claude API key:** right-click Meowl → *Einstellungen* (settings) → paste the key → *Speichern*.
+3. **Add an API key:** right-click Meowl → *Einstellungen* (settings) → pick the provider (*Claude* or *Google Gemini*, which is free) → paste the key → *Speichern*.
 4. **Click Meowl** to chat. 🎉
 
 ### Getting a Claude API key
@@ -44,7 +44,16 @@ Alternatively, Meowl uses the `ANTHROPIC_API_KEY` environment variable if no key
 Check out **[awesome-freellm-apis](https://github.com/open-free-llm-api/awesome-freellm-apis)**, a daily updated list
 of LLM providers with free tiers (Google Gemini, Groq, Mistral and many more) including direct links to get a key.
 
-> Note: Meowl currently talks to Claude only. Support for free providers such as Google Gemini is in the works.
+> Meowl supports **Google Gemini** out of the box, see [the free Gemini key](#getting-a-free-google-gemini-key) below.
+
+### Getting a free Google Gemini key
+
+1. Open [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) and sign in with a Google account (no credit card).
+2. Click *Create API key* and copy it.
+3. In Meowl's settings choose **Google Gemini** as provider and paste the key.
+
+The free tier has per-minute and daily limits. If Meowl says the limit is reached, wait a minute or switch to *Flash-Lite*.
+Alternatively, Meowl uses the `GOOGLE_API_KEY` or `GEMINI_API_KEY` environment variable.
 
 <p align="center">
   <img src="docs/screenshots/settings.png" width="420" alt="Settings dialog" />
@@ -91,12 +100,13 @@ Meowl uses the Claude API, which is pay-per-use. Rough cost per chat message:
 | Claude Opus 5.5 (default, smartest) | ~1–2 ¢ |
 | Claude Sonnet 5.5 | ~0.5–1 ¢ |
 | Claude Haiku 5.5 (fastest, cheapest) | < 0.1 ¢ |
+| Google Gemini (Flash / Flash-Lite) | free, with per-minute and daily limits |
 
-Web searches cost a bit extra. The idle animations don't use the API at all.
+Web searches cost a bit extra (Claude only, Gemini has no web search in Meowl). The idle animations don't use the API at all.
 
 ## Privacy
 
-- Your **messages** and the **results of tools Claude calls** (e.g. clipboard text when you ask about it) are sent to the Anthropic API. Nothing else.
+- Your **messages** and the **results of tools the AI calls** (e.g. clipboard text when you ask about it) are sent to the provider you picked (Anthropic or Google). Nothing else.
 - The conversation is kept in memory only. It's gone when you click the trash icon or quit.
 - The API key is encrypted with Windows DPAPI, only your Windows user can decrypt it.
 - Settings, notes and an error log live in `%APPDATA%\Meowl`.
@@ -126,7 +136,8 @@ dotnet publish src/Meowl/Meowl.csproj -c Release -r win-x64 --self-contained tru
 | [`PetWindow.xaml.cs`](src/Meowl/PetWindow.xaml.cs) | Behaviour: hopping, flying, sleeping, mouse interaction, context menu |
 | [`ChatWindow.xaml.cs`](src/Meowl/ChatWindow.xaml.cs) | The chat speech bubble |
 | [`Services/PetAgent.cs`](src/Meowl/Services/PetAgent.cs) | Claude API connection and the agent loop |
-| [`Services/PetToolbox.cs`](src/Meowl/Services/PetToolbox.cs) | The tools Claude may use, add your own here |
+| [`Services/GeminiAgent.cs`](src/Meowl/Services/GeminiAgent.cs) | Google Gemini via its OpenAI-compatible API, same tools |
+| [`Services/PetToolbox.cs`](src/Meowl/Services/PetToolbox.cs) | The tools the AI may use, add your own here |
 | [`Services/PetSettings.cs`](src/Meowl/Services/PetSettings.cs) | Settings, encrypted API key, autostart |
 
 After changing the pixel art, regenerate the app icon:
@@ -143,7 +154,7 @@ Meowl.exe --export-icon src/Meowl/Assets/pet.ico
    unter *Billing* etwas Guthaben aufladen, unter *API Keys* einen Schlüssel erstellen (`sk-ant-...`).
    Einen **kostenlosen API-Schlüssel** suchst du am besten in der Liste
    [awesome-freellm-apis](https://github.com/open-free-llm-api/awesome-freellm-apis).
-   (Hinweis: Meowl spricht im Moment nur mit Claude, Unterstützung für Gratis-Anbieter wie Google Gemini ist in Arbeit.)
+   Am einfachsten: **Google Gemini**, kostenlos unter [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).
 3. **Rechtsklick auf Meowl → Einstellungen** → Schlüssel einfügen → *Speichern*.
 4. **Linksklick auf Meowl** öffnet den Chat. Frag zum Beispiel: „Erinnere mich in 20 Minuten an meine Pause“.
 
