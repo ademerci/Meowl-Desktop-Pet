@@ -1,0 +1,81 @@
+<Window x:Class="Meowl.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Meowl – Einstellungen"
+        Width="460" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen" Topmost="True"
+        Background="#FFFDF8" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13.5"
+        Foreground="#3B2A1E">
+    <Window.Resources>
+        <Style TargetType="TextBlock" x:Key="Label">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,14,0,5" />
+        </Style>
+        <Style TargetType="TextBlock" x:Key="Hint">
+            <Setter Property="Foreground" Value="#9A8572" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="6,5" />
+            <Setter Property="BorderBrush" Value="#DCC7B1" />
+        </Style>
+        <Style TargetType="PasswordBox">
+            <Setter Property="Padding" Value="6,5" />
+            <Setter Property="BorderBrush" Value="#DCC7B1" />
+        </Style>
+        <Style TargetType="CheckBox">
+            <Setter Property="Margin" Value="0,6,0,0" />
+        </Style>
+    </Window.Resources>
+
+    <StackPanel Margin="22,8,22,20">
+        <TextBlock Style="{StaticResource Label}" Text="Claude API-Schlüssel" />
+        <PasswordBox x:Name="ApiKeyBox" />
+        <TextBlock Style="{StaticResource Hint}">
+            Bekommst du unter
+            <Hyperlink NavigateUri="https://console.anthropic.com/settings/keys" RequestNavigate="Link_RequestNavigate">console.anthropic.com</Hyperlink>.
+            Wird verschlüsselt nur für deinen Windows-Benutzer gespeichert. Leer lassen, um den bisherigen Schlüssel zu behalten.
+        </TextBlock>
+        <TextBlock x:Name="KeyStatus" Style="{StaticResource Hint}" Foreground="#5E8A4A" />
+
+        <TextBlock Style="{StaticResource Label}" Text="Modell" />
+        <ComboBox x:Name="ModelBox" Padding="6,5" SelectedValuePath="Tag">
+            <ComboBoxItem Tag="claude-opus-5-5" Content="Claude Opus 5.5 – am klügsten (Standard)" />
+            <ComboBoxItem Tag="claude-sonnet-5-5" Content="Claude Sonnet 5.5 – schnell und günstiger" />
+            <ComboBoxItem Tag="claude-haiku-5-5" Content="Claude Haiku 5.5 – am schnellsten und günstigsten" />
+        </ComboBox>
+        <TextBlock Style="{StaticResource Hint}" Text="Grob pro Nachricht: Opus 1–2 Cent, Sonnet etwa die Hälfte, Haiku unter 0,1 Cent. Websuchen kosten extra." />
+
+        <Grid Margin="0,4,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Style="{StaticResource Label}" Text="Name des Haustiers" />
+                <TextBox x:Name="PetNameBox" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Style="{StaticResource Label}" Text="Dein Name (optional)" />
+                <TextBox x:Name="UserNameBox" />
+            </StackPanel>
+        </Grid>
+
+        <TextBlock Style="{StaticResource Label}" Text="Größe" />
+        <Slider x:Name="ScaleSlider" Minimum="0.5" Maximum="1.5" TickFrequency="0.1" IsSnapToTickEnabled="True" />
+
+        <TextBlock Style="{StaticResource Label}" Text="Verhalten" />
+        <CheckBox x:Name="WanderBox" Content="Herumhüpfen und fliegen" />
+        <CheckBox x:Name="WebSearchBox" Content="Websuche erlauben (kostet etwas mehr)" />
+        <CheckBox x:Name="AutostartBox" Content="Mit Windows starten" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+            <Button Content="Abbrechen" Width="96" Padding="0,6" Margin="0,0,8,0" IsCancel="True" />
+            <Button Content="Speichern" Width="96" Padding="0,6" IsDefault="True" Click="Save_Click"
+                    Background="#C27F3F" Foreground="White" BorderBrush="#A9692E" />
+        </StackPanel>
+    </StackPanel>
+</Window>

@@ -1,0 +1,163 @@
+<Window x:Class="Meowl.ChatWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Meowl"
+        Title="Chat"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True"
+        Width="392" Height="520"
+        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13.5"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <Window.Resources>
+        <SolidColorBrush x:Key="Paper" Color="#FFFDF8" />
+        <SolidColorBrush x:Key="Edge" Color="#E6D3BC" />
+        <SolidColorBrush x:Key="Ink" Color="#3B2A1E" />
+        <SolidColorBrush x:Key="Muted" Color="#9A8572" />
+        <SolidColorBrush x:Key="Accent" Color="#C27F3F" />
+        <FontFamily x:Key="Icons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+        <Style x:Key="IconButton" TargetType="Button">
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Foreground" Value="{StaticResource Muted}" />
+            <Setter Property="FontFamily" Value="{StaticResource Icons}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="Transparent" CornerRadius="15">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#F3E6D6" />
+                                <Setter Property="Foreground" Value="{StaticResource Ink}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SendButton" TargetType="Button">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontFamily" Value="{StaticResource Icons}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="{StaticResource Accent}" CornerRadius="18">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#A9692E" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bg" Property="Background" Value="#DCC7B1" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- Außenrand für den Schatten -->
+    <Grid Margin="14,14,14,4">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Background="{StaticResource Paper}" BorderBrush="{StaticResource Edge}" BorderThickness="1.5" CornerRadius="20">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.22" />
+            </Border.Effect>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Kopfzeile (zum Verschieben anfassen) -->
+                <Border Grid.Row="0" Padding="12,10,8,8" Background="Transparent" MouseLeftButtonDown="Header_MouseLeftButtonDown"
+                        BorderBrush="#F0E4D6" BorderThickness="0,0,0,1">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Left" Width="38" Height="38" CornerRadius="19" Background="#F6E7D4" ClipToBounds="True">
+                            <Border.Clip>
+                                <EllipseGeometry Center="19,19" RadiusX="19" RadiusY="19" />
+                            </Border.Clip>
+                            <!-- Ausschnitt mit dem Gesicht -->
+                            <Canvas Width="38" Height="38">
+                                <local:PetView>
+                                    <local:PetView.RenderTransform>
+                                        <TransformGroup>
+                                            <TranslateTransform X="-30" Y="-10" />
+                                            <ScaleTransform ScaleX="0.4" ScaleY="0.4" />
+                                        </TransformGroup>
+                                    </local:PetView.RenderTransform>
+                                </local:PetView>
+                            </Canvas>
+                        </Border>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource IconButton}" Content="&#xE74D;" ToolTip="Neues Gespräch" Click="NewChat_Click" />
+                            <Button Style="{StaticResource IconButton}" Content="&#xE713;" ToolTip="Einstellungen" Click="Settings_Click" />
+                            <Button Style="{StaticResource IconButton}" Content="&#xE8BB;" ToolTip="Schließen (Esc)" Click="Close_Click" />
+                        </StackPanel>
+                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="PetNameText" Text="Meowl" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource Ink}" />
+                            <TextBlock x:Name="StatusText" Text="bereit" FontSize="11.5" Foreground="{StaticResource Muted}" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <!-- Nachrichten -->
+                <ScrollViewer x:Name="Scroller" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="12,10,12,4">
+                    <StackPanel>
+                        <StackPanel x:Name="Messages" />
+                        <!-- Tipp-Anzeige -->
+                        <Border x:Name="Typing" Visibility="Collapsed" HorizontalAlignment="Left" Background="#F3EBE0"
+                                CornerRadius="14,14,14,4" Padding="14,10" Margin="0,4,0,6">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse x:Name="Dot1" Width="7" Height="7" Fill="#B59A80" Margin="0,0,4,0" />
+                                <Ellipse x:Name="Dot2" Width="7" Height="7" Fill="#B59A80" Margin="0,0,4,0" />
+                                <Ellipse x:Name="Dot3" Width="7" Height="7" Fill="#B59A80" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Eingabe -->
+                <Grid Grid.Row="2" Margin="10,6,10,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border Background="White" BorderBrush="{StaticResource Edge}" BorderThickness="1.2" CornerRadius="18" Padding="12,7" MinHeight="36">
+                        <Grid>
+                            <TextBlock x:Name="Placeholder" Text="Schreib mir etwas…" Foreground="#B8A794" IsHitTestVisible="False" VerticalAlignment="Center" />
+                            <TextBox x:Name="Input" BorderThickness="0" Background="Transparent" Foreground="{StaticResource Ink}"
+                                     TextWrapping="Wrap" AcceptsReturn="False" MaxHeight="110" VerticalScrollBarVisibility="Auto"
+                                     VerticalAlignment="Center" CaretBrush="{StaticResource Accent}"
+                                     TextChanged="Input_TextChanged" PreviewKeyDown="Input_PreviewKeyDown" />
+                        </Grid>
+                    </Border>
+                    <Button x:Name="SendButton" Grid.Column="1" Style="{StaticResource SendButton}" Margin="8,0,0,0"
+                            VerticalAlignment="Bottom" Content="&#xE724;" ToolTip="Senden (Enter)" Click="Send_Click" />
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- Sprechblasen-Spitze zu Meowl -->
+        <Canvas Grid.Row="1" Height="14">
+            <Path x:Name="Tip" Canvas.Left="180" Canvas.Top="-1.6" Data="M 0,0 L 11,13 L 22,0"
+                  Fill="{StaticResource Paper}" Stroke="{StaticResource Edge}" StrokeThickness="1.5" />
+        </Canvas>
+    </Grid>
+</Window>
