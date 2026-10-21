@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Meowl/Meowl.csproj" />
+  </Folder>
+</Solution>

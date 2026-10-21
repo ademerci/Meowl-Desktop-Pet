@@ -1,0 +1,11 @@
+# Build-Ausgaben
+bin/
+obj/
+publish/
+*.user
+.vs/
+.vscode/
+.idea/
+
+# Lokale Notizen
+*.old.md
