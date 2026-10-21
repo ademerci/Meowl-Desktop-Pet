@@ -39,6 +39,13 @@ set reminders, take notes and more.
 
 Alternatively, Meowl uses the `ANTHROPIC_API_KEY` environment variable if no key is saved.
 
+### Looking for a free API key?
+
+Check out **[awesome-freellm-apis](https://github.com/open-free-llm-api/awesome-freellm-apis)**, a daily updated list
+of LLM providers with free tiers (Google Gemini, Groq, Mistral and many more) including direct links to get a key.
+
+> Note: Meowl currently talks to Claude only. Support for free providers such as Google Gemini is in the works.
+
 <p align="center">
   <img src="docs/screenshots/settings.png" width="420" alt="Settings dialog" />
   &nbsp;
@@ -134,6 +141,9 @@ Meowl.exe --export-icon src/Meowl/Assets/pet.ico
    Falls Windows warnt („Der Computer wurde durch Windows geschützt“): *Weitere Informationen* → *Trotzdem ausführen*.
 2. API-Schlüssel holen: auf [console.anthropic.com](https://console.anthropic.com/) registrieren,
    unter *Billing* etwas Guthaben aufladen, unter *API Keys* einen Schlüssel erstellen (`sk-ant-...`).
+   Einen **kostenlosen API-Schlüssel** suchst du am besten in der Liste
+   [awesome-freellm-apis](https://github.com/open-free-llm-api/awesome-freellm-apis).
+   (Hinweis: Meowl spricht im Moment nur mit Claude, Unterstützung für Gratis-Anbieter wie Google Gemini ist in Arbeit.)
 3. **Rechtsklick auf Meowl → Einstellungen** → Schlüssel einfügen → *Speichern*.
 4. **Linksklick auf Meowl** öffnet den Chat. Frag zum Beispiel: „Erinnere mich in 20 Minuten an meine Pause“.
 
